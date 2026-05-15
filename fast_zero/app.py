@@ -32,6 +32,13 @@ def get_users():
     return {'users': database}
 
 
+@app.get('/users/{user_id}', status_code=200, response_model=UserPublic)
+def get_unique_user(user_id: int):
+    if 1 <= user_id <= len(database):
+        return database[user_id - 1]
+    raise HTTPException(status_code=404, detail='User Not Found')
+
+
 @app.put('/users/{user_id}', status_code=200, response_model=UserPublic)
 # path parameter pega da URL
 # e o user do body

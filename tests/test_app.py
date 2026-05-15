@@ -46,6 +46,13 @@ def test_get_users(client):
     }
 
 
+def test_get_unique_user_should_return_404(client):
+    response = client.get('/users/0')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User Not Found'}
+
+
 def test_update_user(client):
     response = client.put(
         '/users/1',
@@ -63,6 +70,20 @@ def test_update_user(client):
     }
 
 
+def test_update_user_should_return_404(client):
+    response = client.put(
+        'users/0',
+        json={
+            'username': 'Miguel',
+            'email': 'email@exemple.com',
+            'password': 'secret',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User Not Found'}
+
+
 def test_delete_user(client):
     response = client.delete('/users/1')
 
@@ -72,3 +93,10 @@ def test_delete_user(client):
         'email': 'email@exemple.com',
         'id': 1,
     }
+
+
+def test_delete_user_should_return_404(client):
+    response = client.delete('/users/0')
+
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json() == {'detail': 'User Not Found'}
