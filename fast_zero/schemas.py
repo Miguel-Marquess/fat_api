@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class Message(BaseModel):
@@ -11,14 +11,13 @@ class User(BaseModel):
     password: str
 
 
-class UserDB(User):  # agora UserDB tem todos os campos de User + o campo id
-    id: int
-
-
 class UserPublic(BaseModel):
     username: str
     email: EmailStr
     id: int
+    model_config = ConfigDict(from_attributes=True)
+    # permite o pydantic a ler nao so dicionarios
+    # e sim objetos.
 
 
 class UserList(BaseModel):
