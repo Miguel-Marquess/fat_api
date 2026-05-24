@@ -3,7 +3,7 @@ from dataclasses import asdict
 from sqlalchemy import select
 
 from fast_zero.models import UserDataBase
-from fast_zero.database import get_session
+
 
 def test_create_user_db(session, mock_db_time):
     with mock_db_time(model=UserDataBase) as time:

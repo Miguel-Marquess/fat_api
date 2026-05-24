@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 from fast_zero.app import app
 from fast_zero.database import get_session
 from fast_zero.models import UserDataBase, registry_table
+from fast_zero.security import get_password_hash
 
 
 @pytest.fixture
@@ -80,12 +81,34 @@ def mock_db_time():
 
 @pytest.fixture
 def user(session):
+    password = 'secret'
+
     user_db = UserDataBase(
         username='testname',
         email='email@exemple.com',
-        password='secret',
+        password=get_password_hash(password),
     )
     session.add(user_db)
     session.commit()
     session.refresh(user_db)
+
+    user_db.clean_password = password
+    # new attribute! You can do this
+    # in Python because objs are
+    # dinamics, they have __dict__,
+    # que guarda atributos dinamicamente
+    # Nao guarda no banco, e um atributo
+    # python temporario.
     return user_db
+
+
+@pytest.fixture
+def token(client, user):
+    # o pytest chama a fixture uma vez por test
+    # e reutiliza o resultado para outras chamadas
+    response = client.post(
+        '/login',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+
+    return response.json()['access_token']

@@ -49,24 +49,18 @@ def test_create_user_should_return_409(client, user):
     }
 
 
-def test_get_users(client, user):
+def test_get_users(client, user, token):
     user_schema = UserPublic.model_validate(user).model_dump()
     # model validate transforma
     # outros obj em obj pydantic
     # dentro do schema, deve ter model_config
     # ve la
-    response = client.get('/users/')
-
+    response = client.get(
+        '/users/', headers={'Authorization': f'Bearer {token}'}
+    )
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'users': [user_schema]}
     # validation with pydantic
-
-
-def test_no_get_users(client):
-    response = client.get('/users/')
-
-    assert response.status_code == HTTPStatus.OK
-    assert response.json() == {'users': []}
 
 
 def test_get_unique_user_should_return_404(client):
@@ -84,7 +78,7 @@ def test_get_unique_user(client, user):
     assert response.json() == user_schema
 
 
-def test_update_user(client, user):
+def test_update_user(client, user, token):
     # user e um objeto ORM conectado
     # a session
     response = client.put(
@@ -94,6 +88,7 @@ def test_update_user(client, user):
             'email': 'updated_user@exemple.com',
             'password': 'newpasswordupdated',
         },
+        headers={'Authorization': f'Bearer {token}'},
     )
     # essa funcao pega o estado atual de <user>
     user_schema = UserPublic.model_validate(user).model_dump()
@@ -104,7 +99,7 @@ def test_update_user(client, user):
     assert response.json() == user_schema
 
 
-def test_update_integrity_error(client, user):
+def test_update_integrity_error(client, user, token):
     client.post(  # cria novo user para
         # dar conflito
         '/users',
@@ -122,6 +117,7 @@ def test_update_integrity_error(client, user):
             'email': 'email@exemple.com',
             'password': 'newpassword',
         },
+        headers={'Authorization': f'Bearer {token}'},
     )
 
     assert response_update.status_code == HTTPStatus.CONFLICT
@@ -130,29 +126,23 @@ def test_update_integrity_error(client, user):
     }
 
 
-def test_update_user_should_return_404(client):
-    response = client.put(
-        'users/0',
-        json={
-            'username': 'testname',
-            'email': 'email@exemple.com',
-            'password': 'secret',
-        },
+def test_delete_user(client, user, token):
+    response = client.delete(
+        '/users/1', headers={'Authorization': f'Bearer {token}'}
     )
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User Not Found'}
-
-
-def test_delete_user(client, user):
-    response = client.delete('/users/1')
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {'message': 'User was deleted.'}
 
 
-def test_delete_user_should_return_404(client):
-    response = client.delete('/users/0')
+def test_token_acess(client, user):
+    response_acess = client.post(
+        '/login',
+        data={'username': user.email, 'password': user.clean_password},
+    )  # como e formulario, passa data e nao json
 
-    assert response.status_code == HTTPStatus.NOT_FOUND
-    assert response.json() == {'detail': 'User Not Found'}
+    response_token = response_acess.json()
+
+    assert response_acess.status_code == HTTPStatus.OK
+    assert response_token['token_type'] == 'Bearer'
+    assert 'access_token' in response_token
