@@ -1,4 +1,3 @@
-import secrets
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -12,13 +11,11 @@ from sqlalchemy.orm import Session
 
 from fast_zero.database import get_session
 from fast_zero.models import UserDataBase
+from fast_zero.settings import Settings
 
 pwd_context = PasswordHash.recommended()
-# constantes
-SECRET_KEY = secrets.token_hex()
-ALGORITHM = 'HS256'
-ACESS_TOKEN_EXPIRE_MINUTES = 30
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='login')
+settings = Settings()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/login')
 
 
 # coloca a rota que e usada para autenticacao
@@ -42,14 +39,14 @@ def create_acess_token(claims: dict):
     # copia para nao alterar o data org
 
     expire = datetime.now(tz=ZoneInfo('UTC')) + timedelta(
-        minutes=ACESS_TOKEN_EXPIRE_MINUTES
+        minutes=settings.ACESS_TOKEN_EXPIRE_MINUTES
     )
     # pega horario atual, soma 30 minutos
     # o timeldelta e um objeto que soma
     # e subtrai datas e horarios
     to_encode.update({'exp': expire})
     # update atualiza mais de um campo por vez
-    encoded_jwt = encode(to_encode, SECRET_KEY, ALGORITHM)
+    encoded_jwt = encode(to_encode, settings.SECRET_KEY, settings.ALGORITHM)
     return encoded_jwt
 
 
@@ -64,7 +61,7 @@ def get_current_user(
         headers={'WWW-Authenticate': 'Bearer'},
     )
     try:
-        payload = decode(token, SECRET_KEY, ALGORITHM)
+        payload = decode(token, settings.SECRET_KEY, settings.ALGORITHM)
         sub_email = payload.get('sub')
         if not sub_email:
             raise invalid_credentials
@@ -74,7 +71,6 @@ def get_current_user(
     user = session.scalar(
         select(UserDataBase).where(UserDataBase.email == sub_email)
     )
-
     if not user:
         raise invalid_credentials
     return user

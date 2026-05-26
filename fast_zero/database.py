@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 from fast_zero.models import UserDataBase, registry_table
 from fast_zero.settings import Settings
 
-engine = create_engine(Settings().DATABASE_URL)
+settings = Settings()
+
+engine = create_engine(settings.DATABASE_URL)
 registry_table.metadata.create_all(engine)
 
 
