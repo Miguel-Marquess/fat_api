@@ -7,7 +7,7 @@ from jwt import decode, encode
 from jwt.exceptions import DecodeError
 from pwdlib import PasswordHash
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fast_zero.database import get_session
 from fast_zero.models import UserDataBase
@@ -16,7 +16,6 @@ from fast_zero.settings import Settings
 pwd_context = PasswordHash.recommended()
 settings = Settings()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='auth/login')
-
 
 # coloca a rota que e usada para autenticacao
 # se o user nao tiver um token bearer, ele e enviado para
@@ -50,8 +49,8 @@ def create_acess_token(claims: dict):
     return encoded_jwt
 
 
-def get_current_user(
-    session: Session = Depends(get_session),
+async def get_current_user(
+    session: AsyncSession = Depends(get_session),
     token: str = Depends(oauth2_scheme),
     # scheme extrai o token
 ):
@@ -68,7 +67,7 @@ def get_current_user(
     except DecodeError:
         raise invalid_credentials
 
-    user = session.scalar(
+    user = await session.scalar(
         select(UserDataBase).where(UserDataBase.email == sub_email)
     )
     if not user:

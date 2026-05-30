@@ -2,9 +2,10 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import Session
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from fast_zero.app import app
@@ -25,19 +26,27 @@ def client(session):
     app.dependency_overrides.clear()
 
 
-@pytest.fixture
-def session():
-    engine = create_engine(
-        'sqlite:///:memory:',
+@pytest_asyncio.fixture
+async def session():
+    engine = create_async_engine(
+        'sqlite+aiosqlite:///:memory:',
         connect_args={'check_same_thread': False},
         poolclass=StaticPool,  # forca a engine a usar
-        # a mesma conexao
+        # a mesma conexao, sqlite cria um banco novo a
+        # cada sessao
     )
-    registry_table.metadata.create_all(engine)
-    with Session(engine) as ss:
+    async with engine.begin() as conn:
+        await conn.run_sync(registry_table.metadata.create_all)
+        # rodar banco de forma assincrona pode virar caos
+        # criar tabela, apagar, remover registro
+        # e melhor um de cada.
+    async with AsyncSession(engine, expire_on_commit=False) as ss:
         yield ss
-    registry_table.metadata.drop_all(engine)
-    engine.dispose()  # descarta engine
+    async with engine.begin() as conn:
+        await conn.run_sync(registry_table.metadata.drop_all)
+        # tambem e porque o sqlalchemy e ddl sao sync e tao em um
+        # ambiente async
+    await engine.dispose()  # descarta engine
 
 
 # funcao para 'ouvir' acoes para que realize algo antes de
@@ -80,8 +89,8 @@ def mock_db_time():
 # automaticamente aquela fixture vira o valor retornado
 
 
-@pytest.fixture
-def user(session):
+@pytest_asyncio.fixture
+async def user(session):
     password = 'secret'
 
     user_db = UserDataBase(
@@ -90,8 +99,8 @@ def user(session):
         password=get_password_hash(password),
     )
     session.add(user_db)
-    session.commit()
-    session.refresh(user_db)
+    await session.commit()
+    await session.refresh(user_db)
 
     user_db.clean_password = password
     # new attribute! You can do this

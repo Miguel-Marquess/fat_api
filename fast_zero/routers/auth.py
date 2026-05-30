@@ -1,11 +1,7 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
-from fast_zero.database import get_session
+from fast_zero.dependencies import OAuth2Form, T_Session
 from fast_zero.models import UserDataBase
 from fast_zero.schemas import Token
 from fast_zero.security import (
@@ -14,19 +10,17 @@ from fast_zero.security import (
 )
 
 router = APIRouter(tags=['auth'], prefix='/auth')
-T_Session = Annotated[Session, Depends(get_session)]
-OAuth2Form = Annotated[OAuth2PasswordRequestForm, Depends()]
 
 
 @router.post('/login', response_model=Token)
-def login_for_acess_token(
+async def login_for_acess_token(
     form_data: OAuth2Form,
     # usa a propria classe como dependency,
     # e o OAuth2 tem dependencia propria
     # ela foi feita para ser assim mesmo
     session: T_Session,
 ):
-    user = session.scalar(
+    user = await session.scalar(
         select(UserDataBase).where(UserDataBase.email == form_data.username)
     )
 

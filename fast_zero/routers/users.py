@@ -1,40 +1,32 @@
-from typing import Annotated
-
 from fastapi import (  # Injecao de dependencias,
     APIRouter,
-    Depends,
     HTTPException,
-    Query,
 )
 
 # uma ex: ROTA que precisa de certa coisa para funcionar
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 
-from fast_zero.database import get_session, get_user_by_id
+from fast_zero.database import get_user_by_id
+from fast_zero.dependencies import Current_user, T_FilterPage, T_Session
 from fast_zero.models import UserDataBase
-from fast_zero.schemas import FilterPage, Message, User, UserList, UserPublic
+from fast_zero.schemas import Message, User, UserList, UserPublic
 from fast_zero.security import (
-    get_current_user,
     get_password_hash,
 )
 
 router = APIRouter(tags=['users'], prefix='/users')
-T_Session = Annotated[Session, Depends(get_session)]
-Current_user = Annotated[UserDataBase, Depends(get_current_user)]
-T_FilterPage = Annotated[FilterPage, Query()]
-
-
 # tags = documentacao, 'menu' as rotas
 # prefix = como todas as rotas tem /users, ele ajuda
 # a nao repetrir, permitindo colocar somente /, nao
 # precisando botar '[/users]' em todas as rotas
+
+
 @router.post('/', status_code=201, response_model=UserPublic)
 # o proprio pydantic
 # valida a saida de dados, automaticamente ele
 # coloca o valor retornado no response model
-def create_user(user: User, session: T_Session):
+async def create_user(user: User, session: T_Session):
     # roda a funcao get session e passa seu resultado
     # para a funcao
     # 1. request chega
@@ -48,7 +40,7 @@ def create_user(user: User, session: T_Session):
     # 8. FastAPI continua o generator
     # 9. sai do with
     # 10. sessão fecha automaticamente
-    db_user = session.scalar(
+    db_user = await session.scalar(
         select(UserDataBase).where(
             (UserDataBase.email == user.email)
             | (UserDataBase.username == user.username)
@@ -62,15 +54,15 @@ def create_user(user: User, session: T_Session):
         # passa manualmente pro UserDataBase
     )
     session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+    await session.commit()
+    await session.refresh(db_user)
     return db_user
 
 
 @router.put('/{user_id}', status_code=200, response_model=UserPublic)
 # path parameter pega da URL
 # e o user do body
-def update_user(
+async def update_user(
     user_id: int,
     user: User,
     session: T_Session,
@@ -82,7 +74,7 @@ def update_user(
         )
 
     try:
-        session.execute(
+        await session.execute(
             update(UserDataBase)
             .where(UserDataBase.id == user_id)
             .values(
@@ -90,8 +82,8 @@ def update_user(
                 password=get_password_hash(user.password),
             )
         )
-        session.commit()
-        session.refresh(current_user)
+        await session.commit()
+        await session.refresh(current_user)
     except IntegrityError:
         raise HTTPException(
             status_code=409, detail='Username or Email already exist.'
@@ -100,7 +92,7 @@ def update_user(
 
 
 @router.delete('/{user_id}', status_code=200, response_model=Message)
-def delete_user(
+async def delete_user(
     user_id: int,
     session: T_Session,
     current_user: Current_user,
@@ -109,23 +101,18 @@ def delete_user(
         raise HTTPException(
             status_code=403, detail='Not enough permissions. Forbidden!'
         )
-    session.delete(current_user)
-    session.commit()
+    await session.delete(current_user)
+    await session.commit()
     return {'message': 'User was deleted.'}
 
 
 @router.get('/', status_code=200, response_model=UserList)
-def get_users(
+async def get_users(
     session: T_Session,
-    current_user: Current_user,  # precisa ter um user logado
+    current_user: Current_user,
     filter_page: T_FilterPage,
-):  # o yield so retorna um generator
-    # object, o Dependes faz toda essa dependencia
-    # abrindo e fechando a conexao
-    # ai a rota so preicsa executar
-    # o dependes so recebe o objeto funcao
-    # ele mesmo executa
-    users = session.scalars(
+):
+    users = await session.scalars(
         select(UserDataBase)
         .limit(filter_page.limit)
         .offset(filter_page.offset)
@@ -134,13 +121,14 @@ def get_users(
 
 
 @router.get('/{user_id}', status_code=200, response_model=UserPublic)
-def get_unique_user(
+async def get_unique_user(
     user_id: int,
     session: T_Session,
     current_user: Current_user,
 ):
-
-    user_db = get_user_by_id(user_id, session)
+    user_db = await get_user_by_id(user_id, session)
+    # get_uset_by_id e uma funcao async, ou seja corrotine
+    # ela precisa sere aguardada, pois retorna um obj coroutine
     if not user_db:
         raise HTTPException(status_code=404, detail='User Not Found')
     return user_db
