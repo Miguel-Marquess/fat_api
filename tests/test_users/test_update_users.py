@@ -51,9 +51,11 @@ def test_update_integrity_error(client, user, token):
     }
 
 
-def test_update_user_forbidden(client, token):
+def test_update_user_forbidden(client, other_user, token):
+    # a fixture other_client garante que um usuario nao pode
+    # mexer nos dados de outro que ESTEJA na base de dados.
     response = client.put(
-        '/users/2',
+        f'/users/{other_user.id}',
         json={
             'username': 'updated_user',
             'email': 'updated_user@exemple.com',

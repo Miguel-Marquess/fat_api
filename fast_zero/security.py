@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jwt import decode, encode
-from jwt.exceptions import DecodeError
+from jwt.exceptions import DecodeError, ExpiredSignatureError
 from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -52,7 +52,7 @@ def create_acess_token(claims: dict):
 async def get_current_user(
     session: AsyncSession = Depends(get_session),
     token: str = Depends(oauth2_scheme),
-    # scheme extrai o token
+    # scheme extrai o token do headers
 ):
     invalid_credentials = HTTPException(
         status_code=401,
@@ -65,6 +65,9 @@ async def get_current_user(
         if not sub_email:
             raise invalid_credentials
     except DecodeError:
+        raise invalid_credentials
+
+    except ExpiredSignatureError:
         raise invalid_credentials
 
     user = await session.scalar(

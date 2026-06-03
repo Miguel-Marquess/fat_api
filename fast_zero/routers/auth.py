@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
-from fast_zero.dependencies import OAuth2Form, T_Session
+from fast_zero.dependencies import Current_user, OAuth2Form, T_Session
 from fast_zero.models import UserDataBase
 from fast_zero.schemas import Token
 from fast_zero.security import (
@@ -26,9 +26,21 @@ async def login_for_acess_token(
 
     if not user or not verify_password(form_data.password, user.password):
         raise HTTPException(
-            status_code=401,
+            status_code=400,
             detail='Email or Password incorrect.',
         )
 
     token = create_acess_token(claims={'sub': user.email})
     return {'access_token': token, 'token_type': 'Bearer'}
+
+
+@router.post('/refresh_token', response_model=Token)
+async def refresh_access_token(user: Current_user):
+    # o refresh token deve ser enviado em conjunto com o token no login
+    # para que o um novo token seja gerado somente se o refresh token
+    # e valido tambem
+    # exemplo: access_token = 30min
+    # refresh = 7 dias
+    new_access_token = create_acess_token(claims={'sub': user.email})
+
+    return {'access_token': new_access_token, 'token_type': 'Bearer'}

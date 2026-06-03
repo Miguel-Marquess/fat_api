@@ -1,5 +1,7 @@
 from http import HTTPStatus
 
+from tests.conftest import UserFactory
+
 
 def test_create_user(client):
 
@@ -20,12 +22,13 @@ def test_create_user(client):
 
 
 def test_create_user_should_return_409(client, user):
+    other_user = UserFactory(username=user.username, email=user.email)
     response_created = client.post(
         '/users',
         json={
-            'username': 'testname',
+            'username': other_user.username,
             'password': 'secret',
-            'email': 'email@exemple.com',
+            'email': other_user.email,
         },
     )
 

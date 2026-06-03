@@ -1,9 +1,9 @@
 from http import HTTPStatus
 
 
-def test_delete_user_forbidden(client, token):
+def test_delete_user_forbidden(client, other_user, token):
     response = client.delete(
-        '/users/2', headers={'Authorization': f'Bearer {token}'}
+        f'/users/{other_user.id}', headers={'Authorization': f'Bearer {token}'}
     )
 
     assert response.status_code == HTTPStatus.FORBIDDEN

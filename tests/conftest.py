@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from datetime import datetime
 
+import factory
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
@@ -93,11 +94,9 @@ def mock_db_time():
 async def user(session):
     password = 'secret'
 
-    user_db = UserDataBase(
-        username='testname',
-        email='email@exemple.com',
-        password=get_password_hash(password),
-    )
+    user_db = UserFactory(password=get_password_hash(password))
+    # cria user randomizado a cada chamada
+
     session.add(user_db)
     await session.commit()
     await session.refresh(user_db)
@@ -109,6 +108,20 @@ async def user(session):
     # que guarda atributos dinamicamente
     # Nao guarda no banco, e um atributo
     # python temporario.
+    return user_db
+
+
+@pytest_asyncio.fixture
+async def other_user(session):
+    password = 'secret'
+
+    user_db = UserFactory(password=get_password_hash(password))
+
+    session.add(user_db)
+    await session.commit()
+    await session.refresh(user_db)
+
+    user_db.clean_password = password
     return user_db
 
 
@@ -127,3 +140,13 @@ def token(client, user):
 @pytest.fixture
 def settings():
     return Settings()
+
+
+class UserFactory(factory.Factory):
+    class Meta:
+        model = UserDataBase
+        # vai criar uma nova classe UserDB
+
+    username = factory.Sequence(lambda n: f'test{n}')
+    email = factory.LazyAttribute(lambda obj: f'{obj.username}@exemple.com')
+    password = factory.LazyAttribute(lambda obj: f'{obj.username}secret')
