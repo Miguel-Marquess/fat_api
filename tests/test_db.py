@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fast_zero.models import UserDataBase
+from fast_zero.models.db_models import UserDataBase
 from tests.conftest import UserFactory
 
 
@@ -21,12 +21,13 @@ async def test_create_user_db(session: AsyncSession, mock_db_time):
         )
 
     assert asdict(user_db) == {
-        'id': 1,
+        'id': user.id,
         'username': user.username,
         'email': user.email,
         'password': user.password,
         'created_at': time,  # aqui recebe o time praq
         # possa fazer a verificacao, o obj time
         'updated_at': time,
+        'user_tasks': [],
     }
     # o id e 1 pois sempre o banco esta sendo apagadop(registry.drop_all())

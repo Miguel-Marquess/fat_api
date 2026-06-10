@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from fast_zero.dependencies import Current_user, OAuth2Form, T_Session
-from fast_zero.models import UserDataBase
-from fast_zero.schemas import Token
+from fast_zero.models.db_models import UserDataBase
+from fast_zero.schemas.users_schemas import Token
 from fast_zero.security import (
     create_acess_token,
     verify_password,

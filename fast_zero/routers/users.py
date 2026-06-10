@@ -9,8 +9,8 @@ from sqlalchemy.exc import IntegrityError
 
 from fast_zero.database import get_user_by_id
 from fast_zero.dependencies import Current_user, T_FilterPage, T_Session
-from fast_zero.models import UserDataBase
-from fast_zero.schemas import Message, User, UserList, UserPublic
+from fast_zero.models.db_models import UserDataBase
+from fast_zero.schemas.users_schemas import Message, User, UserList, UserPublic
 from fast_zero.security import (
     get_password_hash,
 )

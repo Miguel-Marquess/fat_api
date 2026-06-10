@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from fast_zero.models import UserDataBase, registry_table
+from fast_zero.models.db_models import UserDataBase, registry_table
 from fast_zero.settings import Settings
 
 settings = Settings()

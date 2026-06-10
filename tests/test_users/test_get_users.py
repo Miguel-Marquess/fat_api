@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from fast_zero.schemas import UserPublic
+from fast_zero.schemas.users_schemas import UserPublic
 
 
 def test_get_users(client, user, token):

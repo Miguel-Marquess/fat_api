@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fast_zero.database import get_session
-from fast_zero.models import UserDataBase
+from fast_zero.models.db_models import UserDataBase
 from fast_zero.settings import Settings
 
 pwd_context = PasswordHash.recommended()
@@ -38,7 +38,7 @@ def create_acess_token(claims: dict):
     # copia para nao alterar o data org
 
     expire = datetime.now(tz=ZoneInfo('UTC')) + timedelta(
-        minutes=settings.ACESS_TOKEN_EXPIRE_MINUTES
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
     # pega horario atual, soma 30 minutos
     # o timeldelta e um objeto que soma

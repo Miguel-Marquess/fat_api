@@ -12,5 +12,5 @@ class Settings(BaseSettings):
     # python -m sqlite3 <nome_banco>
     DATABASE_URL: str
     SECRET_KEY: str
-    ACESS_TOKEN_EXPIRE_MINUTES: int
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
     ALGORITHM: str

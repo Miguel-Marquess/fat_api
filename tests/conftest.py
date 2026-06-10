@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from fast_zero.app import app
 from fast_zero.database import get_session
-from fast_zero.models import UserDataBase, registry_table
+from fast_zero.models.db_models import UserDataBase, registry_table
 from fast_zero.security import get_password_hash
 from fast_zero.settings import Settings
 

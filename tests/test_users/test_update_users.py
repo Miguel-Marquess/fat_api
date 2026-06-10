@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from fast_zero.schemas import UserPublic
+from fast_zero.schemas.users_schemas import UserPublic
 
 
 def test_update_user(client, user, token):
@@ -24,21 +24,11 @@ def test_update_user(client, user, token):
     assert response.json() == user_schema
 
 
-def test_update_integrity_error(client, user, token):
-    client.post(  # cria novo user para
-        # dar conflito
-        '/users',
-        json={
-            'username': 'pingueleto',
-            'email': 'pingueleto@exemple.com',
-            'password': 'secret',
-        },
-    )
-
+def test_update_integrity_error(client, user, other_user, token):
     response_update = client.put(
         f'/users/{user.id}',
         json={  # conflito por username
-            'username': 'pingueleto',
+            'username': other_user.username,
             'email': 'email@exemple.com',
             'password': 'newpassword',
         },
