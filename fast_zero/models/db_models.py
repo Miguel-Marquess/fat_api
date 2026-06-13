@@ -37,6 +37,7 @@ class UserDataBase:
 @registry_table.mapped_as_dataclass
 class TaskDataBase:
     __tablename__ = 'tasks'
+
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     title: Mapped[str]
     description: Mapped[str]
@@ -44,3 +45,10 @@ class TaskDataBase:
     # elementos do tipo TaskState
 
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    created_at: Mapped[datetime] = mapped_column(
+        init=False, server_default=func.now()
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        init=False, onupdate=func.now(), server_default=func.now()
+    )

@@ -4,8 +4,9 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from fast_zero.models.db_models import UserDataBase
+from fast_zero.models.db_models import TaskDataBase, UserDataBase
 from tests.conftest import UserFactory
+from tests.test_tasks.test_todos import TaskFactory
 
 
 @pytest.mark.asyncio
@@ -31,3 +32,19 @@ async def test_create_user_db(session: AsyncSession, mock_db_time):
         'user_tasks': [],
     }
     # o id e 1 pois sempre o banco esta sendo apagadop(registry.drop_all())
+
+
+@pytest.mark.asyncio
+async def test_create_task_db(session, mock_db_time, user):
+    with mock_db_time(model=TaskDataBase):
+        task = TaskFactory(user_id=user.id)
+        session.add(task)
+        await session.commit()
+
+        task_db = await session.scalar(
+            select(TaskDataBase).where(
+                TaskDataBase.user_id == user.id, TaskDataBase.id == task.id
+            )
+        )
+
+    assert asdict(task_db) == asdict(task)

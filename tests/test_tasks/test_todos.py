@@ -1,9 +1,12 @@
+from http import HTTPStatus
+
 import factory
 import pytest
 from factory import fuzzy
+from pydantic import ValidationError
 
 from fast_zero.models.db_models import TaskDataBase
-from fast_zero.schemas.tasks_schemas import TaskState
+from fast_zero.schemas.tasks_schemas import TaskPublic, TaskSchema, TaskState
 
 
 class TaskFactory(factory.Factory):
@@ -129,3 +132,89 @@ async def test_task_state_should_return_5_todos(client, token, session, user):
     )
 
     assert len(response.json()['tasks']) == expected_tasks
+
+
+@pytest.mark.asyncio
+async def test_get_tasks(client, token, user, session):
+    task = TaskFactory(user_id=user.id)
+    session.add(task)
+    await session.commit()
+
+    response = client.get(
+        '/tasks/', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.json()['tasks'] == ([
+        TaskPublic.model_validate(task, from_attributes=True).model_dump(
+            mode='json'
+        )
+    ])
+
+
+@pytest.mark.asyncio
+async def test_get_task_filter_by_title(client, user, session, token):
+    task = TaskFactory(user_id=user.id, title='test1')
+    session.add(task)
+    await session.commit()
+
+    response = client.get(
+        '/tasks/?title=tes', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.json()['tasks'] == ([
+        TaskPublic.model_validate(task).model_dump(mode='json')
+    ])
+
+
+@pytest.mark.asyncio
+async def test_get_task_filter_by_state(client, user, session, token):
+    task = TaskFactory(user_id=user.id, state='todo')
+    session.add(task)
+    await session.commit()
+
+    response = client.get(
+        '/tasks/?state=todo', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.json()['tasks'] == ([
+        TaskPublic.model_validate(task).model_dump(mode='json')
+    ])
+
+
+@pytest.mark.asyncio
+async def test_get_task_short_title(client, user, session, token):
+    task = TaskFactory(user_id=user.id, title='test')
+    session.add(task)
+    await session.commit()
+
+    response = client.get(
+        '/tasks/?title=te', headers={'Authorization': f'Bearer {token}'}
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.asyncio
+async def test_get_task_largest_title(client, user, session, token):
+    task = TaskFactory(user_id=user.id, title='test')
+    session.add(task)
+    await session.commit()
+
+    response = client.get(
+        f'/tasks/?title={"t" * 21}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.asyncio
+async def test_get_task_short_title_validation_error(user):
+    with pytest.raises(ValidationError):
+        TaskSchema(user_id=user.id, title='te')
+
+
+@pytest.mark.asyncio
+async def test_get_task_largest_title_validation_error(user):
+    with pytest.raises(ValidationError):
+        TaskSchema(user_id=user.id, title='a' * 21)

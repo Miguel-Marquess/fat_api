@@ -7,7 +7,7 @@ import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.pool import StaticPool
+from testcontainers.postgres import PostgresContainer
 
 from fast_zero.app import app
 from fast_zero.database import get_session
@@ -27,15 +27,17 @@ def client(session):
     app.dependency_overrides.clear()
 
 
-@pytest_asyncio.fixture
-async def session():
-    engine = create_async_engine(
-        'sqlite+aiosqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool,  # forca a engine a usar
-        # a mesma conexao, sqlite cria um banco novo a
-        # cada sessao
-    )
+@pytest.fixture(scope='session')
+# esse scope define isso
+# cria o conteiner uma vez e usa para todos os testes
+# deixando mais rapido, pois so precisa criar um e nao varios.
+def engine():
+    with PostgresContainer('postgres:17', driver='psycopg') as postgres:
+        yield create_async_engine(postgres.get_connection_url())
+
+
+@pytest_asyncio.fixture()
+async def session(engine):
     async with engine.begin() as conn:
         await conn.run_sync(registry_table.metadata.create_all)
         # rodar banco de forma assincrona pode virar caos

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from fast_zero.models.tasks_models import TaskState
@@ -11,6 +13,8 @@ class TaskSchema(BaseModel):
 
 class TaskPublic(TaskSchema):
     id: int
+    created_at: datetime
+    updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -24,7 +28,7 @@ class FilterPage(BaseModel):
 
 
 class TaskPage(FilterPage):
-    title: str | None = Field(default=None, min_length=3)
+    title: str | None = Field(default=None, min_length=3, max_length=20)
     description: str | None = None
     state: TaskState | None = None
 

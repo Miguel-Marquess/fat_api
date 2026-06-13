@@ -10,7 +10,7 @@ def test_delete_user_forbidden(client, other_user, token):
     assert response.json() == {'detail': 'Not enough permissions. Forbidden!'}
 
 
-def test_delete_user(client, user, token):
+def test_delete_user(client, token):
     response = client.delete(
         '/users/1', headers={'Authorization': f'Bearer {token}'}
     )
