@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Realiza o checkout
+        uses: actions/checkout@v6
+        
       - name: Instala o Python
         uses: actions/setup-python@v6
         with:
