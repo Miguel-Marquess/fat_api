@@ -11,3 +11,12 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
+        
+      - name: Instala o Poetry
+        run: pipx install poetry
+      
+      - name: Instala as dependencias
+        run: poetry install
+
+      - name: Executa testes
+        run: poetry run task test
