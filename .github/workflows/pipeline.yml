@@ -5,11 +5,16 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    env: 
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      ALGORITHM: ${{ secrets.ALGORITHM }}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}
 
     steps:
-      - name: Realiza o checkout
+      - name: Copia os arquivos do Repositorio
         uses: actions/checkout@v6
-        
+
       - name: Instala o Python
         uses: actions/setup-python@v6
         with:
