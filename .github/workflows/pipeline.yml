@@ -25,6 +25,9 @@ jobs:
       
       - name: Instala as dependencias
         run: poetry install
+      
+      - name: Executa o Linter
+        run: poetry run ruff check
 
       - name: Executa testes
         run: poetry run task test
